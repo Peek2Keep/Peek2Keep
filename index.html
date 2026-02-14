@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ad Unlock Gallery</title>
-
 <style>
 body {
     margin: 0;
@@ -21,11 +20,9 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    position: sticky;
-    top: 0;
-    z-index: 10;
 }
 
+/* Favorites top icon */
 .favorite-icon-top {
     cursor: pointer;
     font-size: 24px;
@@ -39,12 +36,14 @@ body {
     padding: 12px;
 }
 
+/* Card */
 .card {
     background: #1c1c1c;
     border-radius: 12px;
     overflow: hidden;
 }
 
+/* Image */
 .card img {
     width: 100%;
     height: 300px;
@@ -52,7 +51,7 @@ body {
     cursor: pointer;
 }
 
-/* Bottom Info Section */
+/* Bottom Info */
 .bottom-info {
     display: flex;
     justify-content: space-between;
@@ -116,7 +115,7 @@ body {
     color: white;
 }
 
-/* FAVORITES PAGE */
+/* Favorites page */
 .favorites-page {
     position: fixed;
     top: -100%;
@@ -167,43 +166,9 @@ body {
     <span class="favorite-icon-top" onclick="openFavorites()">❤️</span>
 </div>
 
-<div class="gallery">
+<div class="gallery" id="gallery"></div>
 
-    <div class="card" data-original="3">
-        <img src="https://picsum.photos/600/800?1" onclick="handleClick(this)">
-        <div class="bottom-info">
-            <div>Ads Left: <span>3</span></div>
-            <div class="heart" onclick="toggleFavorite(this)">🤍</div>
-        </div>
-    </div>
-
-    <div class="card" data-original="2">
-        <img src="https://picsum.photos/600/800?2" onclick="handleClick(this)">
-        <div class="bottom-info">
-            <div>Ads Left: <span>2</span></div>
-            <div class="heart" onclick="toggleFavorite(this)">🤍</div>
-        </div>
-    </div>
-
-    <div class="card" data-original="4">
-        <img src="https://picsum.photos/600/800?3" onclick="handleClick(this)">
-        <div class="bottom-info">
-            <div>Ads Left: <span>4</span></div>
-            <div class="heart" onclick="toggleFavorite(this)">🤍</div>
-        </div>
-    </div>
-
-    <div class="card" data-original="1">
-        <img src="https://picsum.photos/600/800?4" onclick="handleClick(this)">
-        <div class="bottom-info">
-            <div>Ads Left: <span>1</span></div>
-            <div class="heart" onclick="toggleFavorite(this)">🤍</div>
-        </div>
-    </div>
-
-</div>
-
-<!-- POPUP -->
+<!-- Popup -->
 <div class="popup" id="popup">
     <img id="popupImg">
     <div class="popup-buttons">
@@ -212,7 +177,7 @@ body {
     </div>
 </div>
 
-<!-- FAVORITES PAGE -->
+<!-- Favorites Page -->
 <div class="favorites-page" id="favoritesPage">
     <div class="favorites-header">
         Your Favorites
@@ -223,15 +188,39 @@ body {
 
 <script>
 let favorites = [];
+let galleryData = JSON.parse(localStorage.getItem('galleryData')) || [];
 let currentCard = null;
 let currentImage = null;
 
+// Load gallery
+function loadGallery() {
+    const gallery = document.getElementById('gallery');
+    gallery.innerHTML = '';
+    galleryData.forEach((item, index) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.setAttribute('data-original', item.ads);
+        card.innerHTML = `
+            <img src="${item.url}" data-adslink="${item.link}" onclick="handleClick(this)">
+            <div class="bottom-info">
+                <div>Ads Left: <span>${item.ads}</span></div>
+                <div class="heart" onclick="toggleFavorite(this)">🤍</div>
+            </div>
+        `;
+        gallery.appendChild(card);
+    });
+}
+
+// Handle image click
 function handleClick(imgElement) {
     const card = imgElement.closest(".card");
     const counterSpan = card.querySelector(".bottom-info span");
     let currentAds = parseInt(counterSpan.textContent);
+    const adsLink = imgElement.getAttribute("data-adslink");
 
     if (currentAds > 0) {
+        // Open the ads link in new tab
+        window.open(adsLink, '_blank');
         currentAds--;
         counterSpan.textContent = currentAds;
     }
@@ -243,11 +232,13 @@ function handleClick(imgElement) {
     }
 }
 
+// Show popup
 function showPopup(src) {
     document.getElementById("popupImg").src = src;
     document.getElementById("popup").style.display = "flex";
 }
 
+// Save image
 document.getElementById("saveBtn").onclick = function() {
     const link = document.createElement("a");
     link.href = currentImage;
@@ -258,16 +249,21 @@ document.getElementById("saveBtn").onclick = function() {
     document.getElementById("popup").style.display = "none";
 };
 
+// Cancel popup -> reset ads
 document.getElementById("cancelBtn").onclick = function() {
-    let confirmReset = confirm("Are you sure? The ads will reset.");
-    if (confirmReset) {
-        const counterSpan = currentCard.querySelector(".bottom-info span");
-        const originalValue = currentCard.getAttribute("data-original");
-        counterSpan.textContent = originalValue;
-        document.getElementById("popup").style.display = "none";
+    if(currentCard){
+        let confirmReset = confirm("Are you sure? The ads will reset.");
+        if (confirmReset) {
+            const counterSpan = currentCard.querySelector(".bottom-info span");
+            const originalValue = currentCard.getAttribute("data-original");
+            counterSpan.textContent = originalValue;
+            currentCard.querySelector("img").src = currentImage; // restore image if needed
+            document.getElementById("popup").style.display = "none";
+        }
     }
 };
 
+// Toggle favorites
 function toggleFavorite(heart) {
     const imgSrc = heart.closest(".card").querySelector("img").src;
 
@@ -284,9 +280,10 @@ function toggleFavorite(heart) {
     updateFavoritesPage();
 }
 
+// Update favorites gallery
 function updateFavoritesPage() {
     const gallery = document.getElementById("favoritesGallery");
-    gallery.innerHTML = "";
+    gallery.innerHTML = '';
     favorites.forEach(src => {
         const img = document.createElement("img");
         img.src = src;
@@ -294,6 +291,7 @@ function updateFavoritesPage() {
     });
 }
 
+// Open / Close favorites
 function openFavorites() {
     document.getElementById("favoritesPage").classList.add("active");
 }
@@ -301,6 +299,9 @@ function openFavorites() {
 function closeFavorites() {
     document.getElementById("favoritesPage").classList.remove("active");
 }
+
+// Initial load
+loadGallery();
 </script>
 
 </body>
