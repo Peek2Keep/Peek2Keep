@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ad Unlock Gallery</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #111;
+}
+
+/* Top Bar */
+.top-bar {
+    background: black;
+    color: white;
+    padding: 15px;
+    font-size: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.favorite-icon-top {
+    cursor: pointer;
+    font-size: 24px;
+}
+
+/* Gallery */
+.gallery {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 12px;
+}
+
+.card {
+    background: #1c1c1c;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.card img {
+    width: 100%;
+    height: 300px;
+    object-fit: cover;
+    cursor: pointer;
+}
+
+/* Bottom Info Section */
+.bottom-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: #000;
+    font-size: 16px;
+    font-weight: bold;
+    color: #00ffcc;
+}
+
+/* Heart */
+.heart {
+    cursor: pointer;
+    font-size: 20px;
+}
+
+.heart.active {
+    color: red;
+}
+
+/* Popup */
+.popup {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.9);
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    z-index: 1000;
+}
+
+.popup img {
+    width: 95%;
+    max-height: 80%;
+    border-radius: 15px;
+}
+
+.popup-buttons {
+    margin-top: 20px;
+    display: flex;
+    gap: 15px;
+}
+
+.save-btn, .cancel-btn {
+    padding: 12px 25px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.save-btn {
+    background: #00ffcc;
+}
+
+.cancel-btn {
+    background: red;
+    color: white;
+}
+
+/* FAVORITES PAGE */
+.favorites-page {
+    position: fixed;
+    top: -100%;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    transition: 0.4s ease;
+    z-index: 999;
+    overflow-y: auto;
+}
+
+.favorites-page.active {
+    top: 0;
+}
+
+.favorites-header {
+    color: white;
+    padding: 15px;
+    font-size: 20px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.favorites-gallery {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 12px;
+}
+
+.favorites-gallery img {
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.close-fav {
+    cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+    Unlock Images
+    <span class="favorite-icon-top" onclick="openFavorites()">❤️</span>
+</div>
+
+<div class="gallery">
+
+    <div class="card" data-original="3">
+        <img src="https://picsum.photos/600/800?1" onclick="handleClick(this)">
+        <div class="bottom-info">
+            <div>Ads Left: <span>3</span></div>
+            <div class="heart" onclick="toggleFavorite(this)">🤍</div>
+        </div>
+    </div>
+
+    <div class="card" data-original="2">
+        <img src="https://picsum.photos/600/800?2" onclick="handleClick(this)">
+        <div class="bottom-info">
+            <div>Ads Left: <span>2</span></div>
+            <div class="heart" onclick="toggleFavorite(this)">🤍</div>
+        </div>
+    </div>
+
+    <div class="card" data-original="4">
+        <img src="https://picsum.photos/600/800?3" onclick="handleClick(this)">
+        <div class="bottom-info">
+            <div>Ads Left: <span>4</span></div>
+            <div class="heart" onclick="toggleFavorite(this)">🤍</div>
+        </div>
+    </div>
+
+    <div class="card" data-original="1">
+        <img src="https://picsum.photos/600/800?4" onclick="handleClick(this)">
+        <div class="bottom-info">
+            <div>Ads Left: <span>1</span></div>
+            <div class="heart" onclick="toggleFavorite(this)">🤍</div>
+        </div>
+    </div>
+
+</div>
+
+<!-- POPUP -->
+<div class="popup" id="popup">
+    <img id="popupImg">
+    <div class="popup-buttons">
+        <button class="save-btn" id="saveBtn">Save Image</button>
+        <button class="cancel-btn" id="cancelBtn">Cancel</button>
+    </div>
+</div>
+
+<!-- FAVORITES PAGE -->
+<div class="favorites-page" id="favoritesPage">
+    <div class="favorites-header">
+        Your Favorites
+        <span class="close-fav" onclick="closeFavorites()">✖</span>
+    </div>
+    <div class="favorites-gallery" id="favoritesGallery"></div>
+</div>
+
+<script>
+let favorites = [];
+let currentCard = null;
+let currentImage = null;
+
+function handleClick(imgElement) {
+    const card = imgElement.closest(".card");
+    const counterSpan = card.querySelector(".bottom-info span");
+    let currentAds = parseInt(counterSpan.textContent);
+
+    if (currentAds > 0) {
+        currentAds--;
+        counterSpan.textContent = currentAds;
+    }
+
+    if (currentAds === 0) {
+        currentCard = card;
+        currentImage = imgElement.src;
+        showPopup(currentImage);
+    }
+}
+
+function showPopup(src) {
+    document.getElementById("popupImg").src = src;
+    document.getElementById("popup").style.display = "flex";
+}
+
+document.getElementById("saveBtn").onclick = function() {
+    const link = document.createElement("a");
+    link.href = currentImage;
+    link.download = "image.jpg";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    document.getElementById("popup").style.display = "none";
+};
+
+document.getElementById("cancelBtn").onclick = function() {
+    let confirmReset = confirm("Are you sure? The ads will reset.");
+    if (confirmReset) {
+        const counterSpan = currentCard.querySelector(".bottom-info span");
+        const originalValue = currentCard.getAttribute("data-original");
+        counterSpan.textContent = originalValue;
+        document.getElementById("popup").style.display = "none";
+    }
+};
+
+function toggleFavorite(heart) {
+    const imgSrc = heart.closest(".card").querySelector("img").src;
+
+    if (favorites.includes(imgSrc)) {
+        favorites = favorites.filter(f => f !== imgSrc);
+        heart.textContent = "🤍";
+        heart.classList.remove("active");
+    } else {
+        favorites.push(imgSrc);
+        heart.textContent = "❤️";
+        heart.classList.add("active");
+    }
+
+    updateFavoritesPage();
+}
+
+function updateFavoritesPage() {
+    const gallery = document.getElementById("favoritesGallery");
+    gallery.innerHTML = "";
+    favorites.forEach(src => {
+        const img = document.createElement("img");
+        img.src = src;
+        gallery.appendChild(img);
+    });
+}
+
+function openFavorites() {
+    document.getElementById("favoritesPage").classList.add("active");
+}
+
+function closeFavorites() {
+    document.getElementById("favoritesPage").classList.remove("active");
+}
+</script>
+
+</body>
+</html>
